@@ -4,9 +4,9 @@
  */
 
 // Get API URL from environment variable or use default
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
-export const VIDEO_FEED_URL = process.env.NEXT_PUBLIC_VIDEO_FEED_URL || 'http://localhost:5000/video_feed';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5001/api';
+export const VIDEO_FEED_URL = process.env.NEXT_PUBLIC_VIDEO_FEED_URL || 'http://localhost:5001/video_feed';
 
 // API Endpoints
 export const API_ENDPOINTS = {
@@ -39,7 +39,29 @@ export const API_ENDPOINTS = {
   videoStatus: `${API_URL}/video_status`,
   videoStart: `${API_URL}/start_video`,
   videoStop: `${API_URL}/stop_video`,
-  
+
+  // Parking Area Creation Wizard
+  videoUpload: `${API_BASE_URL}/video/upload`,
+  frames: (filename: string) => `${API_BASE_URL}/frames/${filename}`,
+  createParkingAreaWithSlots: `${API_BASE_URL}/parking-areas/create-with-slots`,
+  slotsGeometry: (areaId: number) => `${API_BASE_URL}/parking-areas/${areaId}/slots-geometry`,
+
+  // Detection Management
+  detectionStart: (areaId: number) => `${API_BASE_URL}/parking-areas/${areaId}/detection/start`,
+  detectionStop: (areaId: number) => `${API_BASE_URL}/parking-areas/${areaId}/detection/stop`,
+  detectionStatus: (areaId: number) => `${API_BASE_URL}/parking-areas/${areaId}/detection/status`,
+  detectionFeed: (areaId: number) => `${API_BASE_URL}/parking-areas/${areaId}/detection/feed`,
+  allDetectionStatus: `${API_BASE_URL}/detection/status`,
+
+  // Cameras
+  cameras: `${API_BASE_URL}/cameras`,
+  cameraById: (id: number) => `${API_BASE_URL}/cameras/${id}`,
+  cameraConnect: (id: number) => `${API_BASE_URL}/cameras/${id}/connect`,
+  cameraDisconnect: (id: number) => `${API_BASE_URL}/cameras/${id}/disconnect`,
+  cameraHealth: (id: number) => `${API_BASE_URL}/cameras/${id}/health`,
+  cameraStream: (id: number) => `${API_BASE_URL}/cameras/${id}/stream`,
+  camerasHealthSummary: `${API_BASE_URL}/cameras/health-summary`,
+
   // System
   health: `${API_URL}/`,
 } as const;

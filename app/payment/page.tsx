@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, CreditCard, Wallet, Smartphone, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -8,10 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Header } from "@/components/header"
 import { PaymentForm } from "@/components/payment-form"
 
-export default function PaymentPage() {
+function PaymentContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  
+
   // Get parameters from URL
   const slotId = searchParams.get("slot") || "A1-001"
   const duration = searchParams.get("duration") || "2h 30m"
@@ -76,7 +76,7 @@ export default function PaymentPage() {
                     <span className="font-bold text-green-600">Nu. {fee}</span>
                   </div>
                 </div>
-                
+
                 <div className="text-sm text-muted-foreground text-center">
                   Payment processed on {new Date().toLocaleString()}
                 </div>
@@ -167,5 +167,13 @@ export default function PaymentPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <PaymentContent />
+    </Suspense>
   )
 }

@@ -9,9 +9,10 @@ import { MetricsGrid } from "./sections/metrics-grid"
 import { ViolationsPanel } from "./sections/violations-panel"
 import { AnalyticsSection } from "./sections/analytics-section"
 import { DurationTracker } from "./sections/duration-tracker"
-import { ParkingMap } from "./sections/parking-map"
+import { ParkingMap } from "./parking-map"
 import { ParkingAreas } from "./sections/parking-areas"
 import { ParkingHistory } from "./sections/parking-history"
+import { CameraManagement } from "./sections/camera-management"
 
 export function Dashboard() {
   const router = useRouter()
@@ -65,7 +66,8 @@ export function Dashboard() {
             {activeSection === "analytics" && <AnalyticsSection />}
             {activeSection === "duration" && <DurationTracker />}
             {activeSection === "history" && <ParkingHistory />}
-            {activeSection === "map" && <ParkingMap />}
+            {activeSection === "map" && <ParkingMap locations={[]} />}
+            {activeSection === "cameras" && <CameraManagement />}
           </div>
         </main>
       </div>

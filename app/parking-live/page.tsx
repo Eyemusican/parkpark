@@ -239,7 +239,19 @@ export default function LiveParkingPage() {
                     ? 'bg-yellow-500'
                     : 'bg-green-500'
                 }`}
-             div className="flex items-center justify-between">
+              >
+                {Math.round(occupancyRate)}%
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-6">
+        <Card className="bg-slate-900/50 border-slate-700/50 mb-6">
+          <CardHeader className="pb-0">
+            <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-white flex items-center gap-2">
                   {parkingArea ? (
@@ -270,7 +282,7 @@ export default function LiveParkingPage() {
                     : 'border-red-500/50 bg-red-500/10 text-red-400'
                 }`}
               >
-                Available
+                {freeSlots} Available
               </Badge>
             </div>
           </CardHeader>
@@ -306,18 +318,11 @@ export default function LiveParkingPage() {
                       : 'bg-green-500'
                   }`}
                   style={{ width: `${occupancyRate}%` }}
-                /
-                onClick={handleRetry}
-                size="sm"
-                variant="outline"
-                className="border-red-500 text-red-400 hover:bg-red-500/10"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Retry
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Stats Card */}
         <Card className="mb-6 bg-slate-800/50 border-slate-700 backdrop-blur-xl">
@@ -510,8 +515,7 @@ export default function LiveParkingPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
+      </main>
     </div>
   )
 }

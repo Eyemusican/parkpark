@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart3, AlertCircle, Clock, Map, Settings, Home, TrendingUp, MapPin, History } from "lucide-react"
+import { BarChart3, AlertCircle, Clock, Map, Settings, Home, TrendingUp, MapPin, History, Camera } from "lucide-react"
 
 interface SidebarProps {
   readonly activeSection: string
@@ -13,6 +13,7 @@ export function Sidebar({ activeSection, setActiveSection, sidebarOpen, setSideb
   const menuItems = [
     { id: "monitoring", label: "Dashboard", icon: Home },
     { id: "areas", label: "Parking Areas", icon: MapPin },
+    { id: "cameras", label: "Cameras", icon: Camera },
     { id: "violations", label: "Violations", icon: AlertCircle },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "duration", label: "Duration Tracker", icon: Clock },
