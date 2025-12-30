@@ -1,13 +1,13 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, MapPin, AlertCircle, RefreshCw, Car, Clock } from "lucide-react"
+import { ArrowLeft, MapPin, AlertCircle, RefreshCw, Car, Clock, History, Image as ImageIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useEffect, useState } from "react"
 import { API_URL } from "@/lib/api-config"
-import { ParkingMap } from "@/components/parking-map"
+import { AreaLocationMap } from "@/components/area-location-map"
 
 interface ParkingArea {
   id: number
@@ -26,6 +26,23 @@ interface SlotStatus {
   event_id?: number
   arrival_time?: string
   duration_minutes?: number
+}
+
+interface ParkingEvent {
+  event_id: number
+  slot_id: number
+  slot_number: number
+  arrival_time: string | null
+  departure_time: string | null
+  fee_amount: number | null
+  entry_photo_url: string | null
+  exit_photo_url: string | null
+  vehicle_id: string | null
+  duration_minutes: number
+  status: 'active' | 'completed'
+  hourly_rate: number
+  currency: string
+  parking_name: string
 }
 
 function formatDuration(minutes: number): string {
@@ -62,7 +79,9 @@ export default function ParkingAreaDetailPage() {
   
   const [area, setArea] = useState<ParkingArea | null>(null)
   const [slots, setSlots] = useState<SlotStatus[]>([])
+  const [history, setHistory] = useState<ParkingEvent[]>([])
   const [loading, setLoading] = useState(true)
+  const [historyLoading, setHistoryLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -87,7 +106,17 @@ export default function ParkingAreaDetailPage() {
           const slotsData: SlotStatus[] = await slotsResponse.json()
           setSlots(slotsData)
         }
-        
+
+        // Fetch parking history for this area
+        const historyResponse = await fetch(`${API_URL}/api/parking-areas/${areaId}/events?limit=20`, {
+          cache: 'no-store'
+        })
+
+        if (historyResponse.ok) {
+          const historyData: ParkingEvent[] = await historyResponse.json()
+          setHistory(historyData)
+        }
+
         setError(null)
       } catch (err) {
         console.error('Error fetching parking data:', err)
@@ -133,33 +162,9 @@ export default function ParkingAreaDetailPage() {
     )
   }
 
-  const occupiedSlots = slots.filter(s => s.is_occupied)
-
-  const handlePayment = (slot: SlotStatus) => {
-    const duration = slot.duration_minutes || 0
-    const fee = calculateParkingFee(duration)
-    const params = new URLSearchParams({
-      slot: `A${slot.slot_number}`,
-      slotId: slot.slot_id.toString(),
-      duration: formatDuration(duration),
-      fee: fee.toString(),
-      vehicle: slot.vehicle_id || 'Unknown',
-      area: area?.name || 'Parking Area',
-      areaId: areaId
-    })
-    router.push(`/payment?${params.toString()}`)
-  }
-
-  // Norzinlam coordinates
-  const norzinlamLocation = {
-    id: areaId,
-    name: area?.name || 'Norzinlam',
-    lat: 27.4728,
-    lng: 89.6393,
-    available: area?.available_slots || 0,
-    total: area?.total_slots || 8,
-    category: 'Ground'
-  }
+  // Separate active and completed sessions from history
+  const activeSessions = history.filter(e => e.status === 'active')
+  const completedSessions = history.filter(e => e.status === 'completed')
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -220,19 +225,7 @@ export default function ParkingAreaDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="w-full h-64 rounded-b-lg overflow-hidden">
-              <ParkingMap
-                locations={[norzinlamLocation]}
-                center={[norzinlamLocation.lat, norzinlamLocation.lng]}
-                zoom={16}
-                selectedLocation={areaId}
-              />
-            </div>
-            <div className="p-3 bg-gray-50 border-t">
-              <p className="text-xs text-gray-600 text-center">
-                📍 Norzinlam, Thimphu • 27.4728° N, 89.6393° E
-              </p>
-            </div>
+            <AreaLocationMap areaId={areaId} />
           </CardContent>
         </Card>
 
@@ -287,81 +280,148 @@ export default function ParkingAreaDetailPage() {
           </CardContent>
         </Card>
 
-        {occupiedSlots.length > 0 && (
-          <Card className="bg-white shadow-sm">
-            <CardHeader className="border-b">
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                Slot Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
+        {/* Unified Parking Sessions Section */}
+        <Card className="bg-white shadow-sm">
+          <CardHeader className="border-b">
+            <CardTitle className="flex items-center gap-2">
+              <Car className="w-5 h-5" />
+              Parking Sessions
+              {activeSessions.length > 0 && (
+                <Badge className="bg-blue-500 ml-2">{activeSessions.length} Active</Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {history.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Car className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>No parking sessions yet</p>
+                <p className="text-sm mt-1">Sessions will appear here when vehicles enter and exit</p>
+              </div>
+            ) : (
               <div className="space-y-4">
-                {occupiedSlots.map((slot) => {
-                  const duration = Math.max(0, slot.duration_minutes || 0) // Ensure non-negative
-                  const fee = calculateParkingFee(duration)
-                  
-                  return (
-                    <Card key={slot.slot_id} className="border-2 border-gray-200 shadow-sm">
-                      <CardContent className="p-5">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 bg-red-500 rounded flex items-center justify-center text-white font-bold">
-                              {slot.slot_number}
-                            </div>
+                {/* Active Sessions */}
+                {activeSessions.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                      Currently Parked
+                    </h3>
+                    <div className="space-y-3">
+                      {activeSessions.map((event) => (
+                        <div
+                          key={event.event_id}
+                          className="flex items-center justify-between p-4 rounded-lg border-2 bg-green-50 border-green-200"
+                        >
+                          <div className="flex items-center gap-4">
+                            {/* Screenshot thumbnail */}
+                            {event.entry_photo_url ? (
+                              <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-green-300 bg-white">
+                                <img
+                                  src={`${API_URL}${event.entry_photo_url}`}
+                                  alt={`Slot ${event.slot_number} entry`}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none'
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-16 h-16 rounded-lg border-2 border-green-300 bg-white flex items-center justify-center">
+                                <Car className="w-6 h-6 text-green-400" />
+                              </div>
+                            )}
+
+                            {/* Session details */}
                             <div>
-                              <h3 className="font-bold text-gray-900 text-lg mb-1">
-                                Slot A{slot.slot_number}
-                              </h3>
-                              <div className="flex flex-wrap gap-3 text-sm text-gray-600">
-                                <div className="flex items-center gap-1">
-                                  <Car className="w-4 h-4" />
-                                  <span>{slot.vehicle_id || 'Unknown'}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span>•</span>
-                                  <span>Car</span>
-                                </div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-bold text-gray-900 text-lg">Slot {event.slot_number}</span>
+                                <Badge className="bg-green-500">Parked</Badge>
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                <Clock className="w-3 h-3 inline mr-1" />
+                                Entry: {formatTime(event.arrival_time || undefined)}
+                              </div>
+                              <div className="text-sm font-medium text-green-700">
+                                Duration: {formatDuration(event.duration_minutes)}
+                                {event.vehicle_id && <span className="text-gray-500"> • ID: {event.vehicle_id}</span>}
                               </div>
                             </div>
                           </div>
-                          <Badge className="bg-red-500 hover:bg-red-600 text-white">
-                            OCCUPIED
-                          </Badge>
-                        </div>
 
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
-                          <Clock className="w-4 h-4" />
-                          <span>Entry: {formatTime(slot.arrival_time)}</span>
-                          <span>•</span>
-                          <span>Duration: {formatDuration(duration)}</span>
+                          {/* Fee display */}
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-gray-900">
+                              {event.currency} {calculateParkingFee(event.duration_minutes)}
+                            </div>
+                            <span className="text-xs text-gray-500">current fee</span>
+                          </div>
                         </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                        <div className="flex items-center justify-between pt-3 border-t">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-600">Parking Fee:</span>
-                            <span className="text-xl font-bold text-gray-900">
-                              Nu. {fee}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              ({Math.ceil(duration / 3)}m)
+                {/* Completed Sessions */}
+                {completedSessions.length > 0 && (
+                  <div className={activeSessions.length > 0 ? 'mt-6 pt-6 border-t' : ''}>
+                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                      Recent History
+                    </h3>
+                    <div className="space-y-2">
+                      {completedSessions.map((event) => (
+                        <div
+                          key={event.event_id}
+                          className="flex items-center justify-between p-3 rounded-lg border bg-gray-50 border-gray-200"
+                        >
+                          <div className="flex items-center gap-3">
+                            {/* Small thumbnail */}
+                            {event.entry_photo_url ? (
+                              <div className="w-10 h-10 rounded overflow-hidden border border-gray-300 bg-white">
+                                <img
+                                  src={`${API_URL}${event.entry_photo_url}`}
+                                  alt={`Slot ${event.slot_number}`}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none'
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-10 h-10 rounded border border-gray-300 bg-white flex items-center justify-center">
+                                <ImageIcon className="w-4 h-4 text-gray-400" />
+                              </div>
+                            )}
+
+                            {/* Session details */}
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-gray-900">Slot {event.slot_number}</span>
+                                <span className="text-xs text-gray-500">
+                                  {formatTime(event.arrival_time || undefined)} - {formatTime(event.departure_time || undefined)}
+                                </span>
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {formatDuration(event.duration_minutes)}
+                                {event.vehicle_id && <span> • {event.vehicle_id}</span>}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Fee */}
+                          <div className="text-right">
+                            <span className="font-semibold text-gray-700">
+                              {event.currency} {event.fee_amount?.toFixed(0) || '0'}
                             </span>
                           </div>
-                          <Button 
-                            onClick={() => handlePayment(slot)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
-                          >
-                            💳 Pay Now
-                          </Button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

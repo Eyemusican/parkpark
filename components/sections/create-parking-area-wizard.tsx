@@ -9,6 +9,7 @@ import { API_ENDPOINTS } from "@/lib/api-config"
 // Step components
 import { VideoUploadStep } from "./wizard-steps/video-upload-step"
 import { SlotDrawingStep } from "./wizard-steps/slot-drawing-step"
+import { FeeConfigurationStep } from "./wizard-steps/fee-configuration-step"
 import { MetadataStep } from "./wizard-steps/metadata-step"
 
 interface WizardData {
@@ -23,6 +24,10 @@ interface WizardData {
   }>
   parkingName: string
   boundaryPolygon: number[][]
+  // Fee configuration
+  hourlyRate: number
+  currency: string
+  gracePeriodMinutes: number
 }
 
 interface StepIndicatorProps {
@@ -48,8 +53,8 @@ function StepIndicator({ step, current, label }: StepIndicatorProps) {
       <span className={`text-sm ${isCurrent ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
         {label}
       </span>
-      {step < 3 && (
-        <div className={`w-12 h-0.5 mx-2 ${current > step ? 'bg-green-500' : 'bg-gray-200'}`} />
+      {step < 4 && (
+        <div className={`w-8 h-0.5 mx-1 ${current > step ? 'bg-green-500' : 'bg-gray-200'}`} />
       )}
     </div>
   )
@@ -82,6 +87,15 @@ export function CreateParkingAreaWizard({ onComplete, onCancel }: CreateParkingA
     setStep(3)
   }
 
+  const handleFeeConfigured = (feeData: {
+    hourlyRate: number
+    currency: string
+    gracePeriodMinutes: number
+  }) => {
+    setData(prev => ({ ...prev, ...feeData }))
+    setStep(4)
+  }
+
   const handleMetadataComplete = async (metadata: { name: string; boundary: number[][] }) => {
     setIsSubmitting(true)
     setError(null)
@@ -97,6 +111,10 @@ export function CreateParkingAreaWizard({ onComplete, onCancel }: CreateParkingA
           video_source: data.videoPath,
           video_source_type: 'file',
           reference_frame_path: data.framePath,
+          // Fee configuration
+          hourly_rate: data.hourlyRate || 20,
+          currency: data.currency || 'Nu.',
+          grace_period_minutes: data.gracePeriodMinutes || 15,
         })
       })
 
@@ -127,10 +145,11 @@ export function CreateParkingAreaWizard({ onComplete, onCancel }: CreateParkingA
       </div>
 
       {/* Progress indicator */}
-      <div className="flex items-center justify-center py-4">
+      <div className="flex items-center justify-center py-4 flex-wrap gap-y-2">
         <StepIndicator step={1} current={step} label="Upload Video" />
         <StepIndicator step={2} current={step} label="Draw Slots" />
-        <StepIndicator step={3} current={step} label="Set Details" />
+        <StepIndicator step={3} current={step} label="Set Fees" />
+        <StepIndicator step={4} current={step} label="Set Details" />
       </div>
 
       {/* Error message */}
@@ -154,9 +173,15 @@ export function CreateParkingAreaWizard({ onComplete, onCancel }: CreateParkingA
         />
       )}
       {step === 3 && (
+        <FeeConfigurationStep
+          onComplete={handleFeeConfigured}
+          onBack={() => setStep(2)}
+        />
+      )}
+      {step === 4 && (
         <MetadataStep
           onComplete={handleMetadataComplete}
-          onBack={() => setStep(2)}
+          onBack={() => setStep(3)}
           isSubmitting={isSubmitting}
         />
       )}

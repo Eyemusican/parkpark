@@ -212,10 +212,10 @@ export function ParkingMap({
   }, [])
 
   return (
-    <div 
-      ref={mapRef} 
+    <div
+      ref={mapRef}
       className="w-full rounded-lg overflow-hidden"
-      style={{ height: '500px', width: '100%' }}
+      style={{ height: '600px', width: '100%' }}
     />
   )
 }

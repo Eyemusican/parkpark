@@ -23,7 +23,11 @@ export const API_ENDPOINTS = {
   // Parking Events
   parkingEvents: `${API_BASE_URL}/parking-events`,
   parkingEventById: (id: number) => `${API_BASE_URL}/parking-events/${id}`,
+  parkingEventsByArea: (areaId: number) => `${API_BASE_URL}/parking-areas/${areaId}/events`,
   activeEvents: `${API_BASE_URL}/parking/active`,
+
+  // Screenshots
+  screenshots: (filename: string) => `${API_BASE_URL}/screenshots/${filename}`,
   
   // Violations
   violations: `${API_BASE_URL}/violations`,
